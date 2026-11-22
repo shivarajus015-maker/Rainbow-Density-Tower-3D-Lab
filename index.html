@@ -1,0 +1,2264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Rainbow Density Tower 3D Lab • ದ್ರಾವ್ಯ, ದ್ರಾವಕ ಮತ್ತು ದ್ರಾವಣಗಳ ಅದ್ಭುತ ಜಗತ್ತು</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Noto+Sans+Kannada:wght@400;500;600;700&family=Orbitron:wght@600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <style>
+    :root {
+      --bg-deep: #040917;
+      --glass-bg: rgba(8, 17, 38, 0.84);
+      --glass-border: rgba(56, 224, 255, 0.32);
+      --cyan: #22e6ff;
+      --amber: #ffb020;
+      --green: #22f59a;
+      --red: #ff4757;
+      --purple: #a855f7;
+      --text-main: #eef6ff;
+      --text-muted: #93acc9;
+      --text-kn: #a6d9f7;
+      --font-ui: 'Space Grotesk', 'Noto Sans Kannada', 'Nirmala UI', system-ui, sans-serif;
+      --font-display: 'Orbitron', 'Noto Sans Kannada', sans-serif;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg-deep);
+      color: var(--text-main);
+      font-family: var(--font-ui);
+    }
+
+    #webgl-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      display: block;
+      cursor: grab;
+      touch-action: none;
+    }
+
+    #webgl-canvas:active {
+      cursor: grabbing;
+    }
+
+    .vignette {
+      position: fixed;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+      background: radial-gradient(circle at 50% 45%, transparent 52%, rgba(2, 6, 16, 0.56) 100%);
+    }
+
+    .glass-panel {
+      background: var(--glass-bg);
+      backdrop-filter: blur(16px) saturate(140%);
+      -webkit-backdrop-filter: blur(16px) saturate(140%);
+      border: 1px solid var(--glass-border);
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    }
+
+    /* Language Filters */
+    body.lang-en .kn { display: none !important; }
+    body.lang-kn .en { display: none !important; }
+
+    /* Top Header Bar */
+    .top-bar {
+      position: fixed;
+      top: 10px;
+      left: 12px;
+      right: 12px;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      pointer-events: none;
+      transition: opacity 0.25s ease, transform 0.25s ease;
+    }
+
+    .brand-pill, .controls-pill {
+      pointer-events: auto;
+    }
+
+    .brand-pill {
+      padding: 8px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .brand-badge {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #ef4444, #facc15, #22c55e, #2563eb);
+      display: grid;
+      place-items: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .brand-kicker {
+      font-size: 9.5px;
+      font-weight: 700;
+      color: var(--cyan);
+      letter-spacing: 0.06em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .brand-title {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #fff;
+      line-height: 1.25;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .controls-pill {
+      padding: 6px 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .hud-btn {
+      border: 1px solid rgba(56, 224, 255, 0.35);
+      background: rgba(14, 28, 60, 0.85);
+      color: #eef6ff;
+      border-radius: 10px;
+      padding: 6px 10px;
+      font-family: var(--font-ui);
+      font-size: 11.5px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      white-space: nowrap;
+      transition: all 0.16s ease;
+    }
+
+    .hud-btn:hover,
+    .hud-btn.active {
+      border-color: var(--cyan);
+      background: rgba(34, 230, 255, 0.2);
+      color: #7dd3fc;
+    }
+
+    /* Left Panel: 5-Step Procedure & Interactive Actions */
+    .left-panel {
+      position: fixed;
+      top: 74px;
+      left: 12px;
+      width: 328px;
+      bottom: 66px;
+      z-index: 15;
+      padding: 13px;
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      transition: opacity 0.25s ease, transform 0.25s ease;
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 7px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--cyan);
+    }
+
+    .step-card {
+      padding: 8px 10px;
+      border-radius: 11px;
+      background: rgba(12, 24, 52, 0.68);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .step-card:hover {
+      border-color: rgba(56, 224, 255, 0.45);
+    }
+
+    .step-card.active {
+      border-color: var(--cyan);
+      background: rgba(14, 54, 92, 0.52);
+      box-shadow: 0 0 16px rgba(34, 230, 255, 0.18);
+    }
+
+    .step-card.done {
+      border-color: rgba(34, 245, 154, 0.55);
+      background: rgba(14, 62, 44, 0.42);
+    }
+
+    .step-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .step-desc {
+      font-size: 11px;
+      color: var(--text-muted);
+      line-height: 1.35;
+    }
+
+    .step-desc.kn {
+      color: var(--text-kn);
+    }
+
+    .action-box {
+      padding: 10px;
+      border-radius: 12px;
+      background: rgba(6, 15, 36, 0.82);
+      border: 1px solid rgba(56, 224, 255, 0.35);
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .primary-cta {
+      width: 100%;
+      border: 1px solid rgba(34, 230, 255, 0.7);
+      background: linear-gradient(135deg, rgba(0, 175, 255, 0.36), rgba(34, 245, 154, 0.28));
+      color: #fff;
+      border-radius: 11px;
+      padding: 10px 12px;
+      font-family: var(--font-ui);
+      font-size: 12.5px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      transition: transform 0.15s ease;
+    }
+
+    .primary-cta:hover:not(:disabled) {
+      transform: translateY(-1px);
+      border-color: var(--cyan);
+    }
+
+    .primary-cta:disabled {
+      opacity: 0.42;
+      cursor: not-allowed;
+    }
+
+    .cup-pour-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+
+    .cup-btn {
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(15, 28, 58, 0.85);
+      color: #fff;
+      border-radius: 10px;
+      padding: 7px 6px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      transition: all 0.16s ease;
+    }
+
+    .cup-btn:hover:not(:disabled) {
+      transform: translateY(-1px);
+      border-color: var(--cyan);
+    }
+
+    .cup-btn:disabled {
+      opacity: 0.38;
+      cursor: not-allowed;
+    }
+
+    .cup-btn.poured {
+      border-color: var(--green);
+      background: rgba(16, 78, 52, 0.55);
+    }
+
+    /* Right Panel: Observation Table + Concepts + Quiz */
+    .right-panel {
+      position: fixed;
+      top: 74px;
+      right: 12px;
+      width: 342px;
+      bottom: 66px;
+      z-index: 15;
+      padding: 13px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      transition: opacity 0.25s ease, transform 0.25s ease;
+    }
+
+    .obs-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 10.5px;
+      background: rgba(6, 14, 34, 0.72);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .obs-table th, .obs-table td {
+      border: 1px solid rgba(56, 224, 255, 0.2);
+      padding: 6px 6px;
+      text-align: left;
+      line-height: 1.25;
+    }
+
+    .obs-table th {
+      background: rgba(14, 36, 76, 0.85);
+      color: var(--cyan);
+      font-weight: 700;
+    }
+
+    .swatch-dot {
+      display: inline-block;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      margin-right: 4px;
+      vertical-align: middle;
+    }
+
+    .concept-card {
+      padding: 9px 11px;
+      border-radius: 11px;
+      background: rgba(12, 24, 52, 0.72);
+      border: 1px solid rgba(168, 85, 247, 0.35);
+      font-size: 11px;
+      line-height: 1.4;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .concept-card strong {
+      color: #e9d5ff;
+    }
+
+    .quiz-launch-btn {
+      width: 100%;
+      border: 1px solid rgba(168, 85, 247, 0.65);
+      background: linear-gradient(135deg, rgba(126, 34, 206, 0.38), rgba(34, 230, 255, 0.22));
+      color: #fff;
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-family: var(--font-ui);
+      font-size: 12.5px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+
+    .quiz-launch-btn:hover {
+      border-color: #d8b4fe;
+    }
+
+    /* Warning Toast */
+    .warn-toast {
+      position: fixed;
+      top: 76px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 40;
+      padding: 9px 16px;
+      border-radius: 12px;
+      background: rgba(65, 14, 28, 0.94);
+      border: 1px solid rgba(255, 71, 87, 0.8);
+      color: #ffe4e6;
+      font-size: 12px;
+      font-weight: 700;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
+      max-width: calc(100vw - 24px);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    /* ======================================================================
+       ACTIVITY CONTROL BAR (Prev / Step / Next / Exit + Show UI)
+       ====================================================================== */
+    .activity-bar {
+      position: fixed;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 25;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      border-radius: 16px;
+      background: rgba(7, 15, 36, 0.9);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(56, 224, 255, 0.42);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+      max-width: calc(100vw - 16px);
+    }
+
+    .act-btn {
+      border: 1px solid rgba(56, 224, 255, 0.35);
+      background: rgba(15, 32, 68, 0.88);
+      color: #fff;
+      border-radius: 10px;
+      padding: 6px 12px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      line-height: 1.15;
+      font-family: var(--font-ui);
+      font-size: 11.5px;
+      font-weight: 700;
+      white-space: nowrap;
+      transition: all 0.16s ease;
+    }
+
+    .act-btn .kn-tiny {
+      font-size: 9.5px;
+      font-weight: 500;
+      color: var(--text-kn);
+    }
+
+    .act-btn:hover:not(:disabled) {
+      border-color: var(--cyan);
+      background: rgba(34, 230, 255, 0.22);
+    }
+
+    .act-btn:disabled {
+      opacity: 0.36;
+      cursor: not-allowed;
+    }
+
+    .act-btn-next {
+      border-color: rgba(34, 230, 255, 0.7);
+      background: linear-gradient(135deg, rgba(0, 175, 255, 0.4), rgba(79, 124, 255, 0.4));
+    }
+
+    .act-btn-exit {
+      border-color: rgba(255, 80, 108, 0.5);
+      background: rgba(76, 16, 32, 0.8);
+      color: #ffd0d9;
+    }
+
+    .act-status-pill {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 3px 10px;
+      border-radius: 10px;
+      background: rgba(4, 10, 24, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      min-width: 122px;
+      text-align: center;
+    }
+
+    .act-step-main {
+      font-family: var(--font-display);
+      font-size: 10.5px;
+      font-weight: 700;
+      color: var(--cyan);
+      white-space: nowrap;
+    }
+
+    .act-step-sub {
+      font-size: 10px;
+      color: var(--text-kn);
+      white-space: nowrap;
+    }
+
+    .btn-show-ui-float {
+      display: none;
+      border-color: rgba(34, 245, 154, 0.65);
+      background: rgba(14, 62, 44, 0.88);
+      color: #bbf7d0;
+    }
+
+    /* HIDE ALL TEXT / UI MODE */
+    body.ui-hidden .top-bar,
+    body.ui-hidden .left-panel,
+    body.ui-hidden .right-panel,
+    body.ui-hidden .mobile-mini-hud,
+    body.ui-hidden .mobile-tab-bar {
+      opacity: 0 !important;
+      pointer-events: none !important;
+    }
+
+    body.ui-hidden .left-panel,
+    body.ui-hidden .right-panel,
+    body.ui-hidden .mobile-tab-bar {
+      display: none !important;
+    }
+
+    body.ui-hidden .btn-show-ui-float {
+      display: flex !important;
+    }
+
+    /* ======================================================================
+       MOBILE MODE (body.mode-mobile)
+       ====================================================================== */
+    .mobile-mini-hud,
+    .mobile-tab-bar {
+      display: none;
+    }
+
+    body.mode-mobile .top-bar {
+      top: 6px;
+      left: 8px;
+      right: 8px;
+      gap: 6px;
+    }
+
+    body.mode-mobile .brand-pill {
+      padding: 6px 10px;
+      flex: 1;
+    }
+
+    body.mode-mobile .brand-kicker,
+    body.mode-mobile #btn-sound {
+      display: none;
+    }
+
+    body.mode-mobile .brand-title {
+      font-size: 12px;
+    }
+
+    body.mode-mobile .controls-pill {
+      padding: 4px 6px;
+      gap: 4px;
+    }
+
+    body.mode-mobile .hud-btn {
+      padding: 5px 7px;
+      font-size: 10.5px;
+    }
+
+    body.mode-mobile .mobile-mini-hud {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      position: fixed;
+      top: 56px;
+      left: 8px;
+      right: 8px;
+      z-index: 12;
+      padding: 5px 10px;
+      border-radius: 12px;
+      background: rgba(8, 17, 38, 0.84);
+      border: 1px solid rgba(56, 224, 255, 0.3);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    body.mode-mobile .mobile-tab-bar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      position: fixed;
+      bottom: 64px;
+      left: 8px;
+      right: 8px;
+      z-index: 18;
+      padding: 5px;
+      border-radius: 14px;
+      background: rgba(8, 17, 38, 0.9);
+      border: 1px solid rgba(56, 224, 255, 0.35);
+    }
+
+    .mob-tab-btn {
+      flex: 1;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text-muted);
+      border-radius: 10px;
+      padding: 6px 4px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      line-height: 1.15;
+    }
+
+    .mob-tab-btn.active {
+      color: #fff;
+      background: rgba(34, 230, 255, 0.2);
+      border-color: rgba(34, 230, 255, 0.55);
+    }
+
+    .mob-tab-btn .kn-tiny {
+      font-size: 9px;
+      color: var(--text-kn);
+    }
+
+    body.mode-mobile .left-panel,
+    body.mode-mobile .right-panel {
+      top: auto;
+      left: 8px;
+      right: 8px;
+      width: auto;
+      bottom: 118px;
+      max-height: 38vh;
+      display: none;
+    }
+
+    body.mode-mobile[data-mobile-tab="steps"] .left-panel {
+      display: flex;
+    }
+
+    body.mode-mobile[data-mobile-tab="table"] .right-panel {
+      display: flex;
+    }
+
+    body.mode-mobile[data-mobile-tab="none"] .left-panel,
+    body.mode-mobile[data-mobile-tab="none"] .right-panel {
+      display: none;
+    }
+
+    body.mode-mobile .activity-bar {
+      bottom: 8px;
+      left: 8px;
+      right: 8px;
+      transform: none;
+      width: auto;
+      justify-content: space-between;
+      padding: 5px 8px;
+      gap: 5px;
+    }
+
+    body.mode-mobile .act-btn {
+      padding: 6px 9px;
+      font-size: 11px;
+    }
+
+    body.mode-mobile .act-status-pill {
+      min-width: 86px;
+      padding: 3px 6px;
+    }
+
+    /* Quiz Modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      background: rgba(3, 8, 22, 0.72);
+      backdrop-filter: blur(6px);
+      display: grid;
+      place-items: center;
+      padding: 14px;
+    }
+
+    .quiz-modal {
+      width: min(640px, 96vw);
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      border: 1px solid rgba(34, 230, 255, 0.5);
+    }
+
+    .quiz-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+      padding-bottom: 10px;
+    }
+
+    .quiz-q-box {
+      padding: 13px;
+      border-radius: 12px;
+      background: rgba(12, 26, 58, 0.78);
+      border: 1px solid rgba(34, 230, 255, 0.25);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .quiz-opts {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 9px;
+    }
+
+    .quiz-opt {
+      text-align: left;
+      padding: 11px 12px;
+      border-radius: 11px;
+      border: 1px solid rgba(56, 224, 255, 0.28);
+      background: rgba(14, 30, 66, 0.8);
+      color: #fff;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      font-size: 12.5px;
+      font-weight: 600;
+    }
+
+    .quiz-opt:hover:not(:disabled) {
+      border-color: var(--cyan);
+    }
+
+    .quiz-opt.correct {
+      border-color: var(--green);
+      background: rgba(16, 78, 52, 0.7);
+    }
+
+    .quiz-opt.wrong {
+      border-color: var(--red);
+      background: rgba(88, 16, 36, 0.7);
+    }
+
+    .quiz-fb {
+      padding: 11px 13px;
+      border-radius: 11px;
+      background: rgba(8, 20, 48, 0.9);
+      border: 1px solid rgba(34, 230, 255, 0.35);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .quiz-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 960px) {
+      body.mode-desktop .left-panel { width: 275px; }
+      body.mode-desktop .right-panel { width: 285px; }
+    }
+
+    @media (max-width: 680px) {
+      .quiz-opts { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body class="lang-bi mode-desktop" data-mobile-tab="steps">
+  <canvas id="webgl-canvas" aria-label="3D Rainbow Density Tower Lab"></canvas>
+  <div class="vignette" aria-hidden="true"></div>
+
+  <!-- Top Bar -->
+  <header class="top-bar">
+    <div class="brand-pill glass-panel">
+      <div class="brand-badge">🌈</div>
+      <div style="min-width:0;">
+        <div class="brand-kicker">
+          <span class="en">GRADE 8 STEM ACTIVITY • DIET MYSORE</span>
+          <span class="kn"> • ೮ನೇ ತರಗತಿ STEM ಚಟುವಟಿಕೆ</span>
+        </div>
+        <div class="brand-title">
+          <span class="en">Solute, Solvent &amp; Solutions — Density Tower</span>
+          <span class="kn"> • ದ್ರಾವ್ಯ, ದ್ರಾವಕ ಮತ್ತು ದ್ರಾವಣಗಳ ಅದ್ಭುತ ಜಗತ್ತು</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="controls-pill glass-panel">
+      <button id="btn-lang" class="hud-btn active" title="Switch Language">
+        🌐 <span id="lang-label">EN + ಕನ್ನಡ</span>
+      </button>
+      <button id="btn-labels-toggle" class="hud-btn active" title="Show / Hide 3D Labels">
+        🏷️ <span id="labels-toggle-label">Labels ON</span>
+      </button>
+      <button id="btn-layout-mode" class="hud-btn active" title="Switch Desktop / Mobile View">
+        <span id="layout-mode-icon">🖥️</span>
+        <span id="layout-mode-label">Desktop</span>
+      </button>
+      <button id="btn-hide-ui" class="hud-btn" title="Hide All Text &amp; Panels">
+        👁️ <span>Hide</span>
+      </button>
+      <button id="btn-sound" class="hud-btn active" title="Toggle Sound">🔊</button>
+    </div>
+  </header>
+
+  <!-- Mobile Mini Readout Strip -->
+  <div class="mobile-mini-hud">
+    <span id="mob-step-lbl" style="color:#22e6ff;">Step 1 / 5</span>
+    <span id="mob-layers-lbl" style="color:#a6d9f7;">Tower Layers: 0 / 4</span>
+  </div>
+
+  <!-- Warning Toast when pouring wrong density order -->
+  <div id="warn-toast" class="warn-toast hidden" role="alert"></div>
+
+  <!-- Left Panel: 5-Step Procedure & Controls -->
+  <aside class="left-panel glass-panel">
+    <div class="panel-head">
+      <span>
+        <span class="en">EXPERIMENT PROCEDURE</span>
+        <span class="kn"> • ಪ್ರಯೋಗದ ವಿಧಾನ</span>
+      </span>
+      <span id="step-badge" style="color:#22f59a;">Step 1/5</span>
+    </div>
+
+    <!-- Step 1 -->
+    <div class="step-card active" id="card-step-1">
+      <div class="step-top">
+        <span><span class="en">Step 1: Prepare Solvent</span> <span class="kn">ಹಂತ ೧: ದ್ರಾವಕದ ಜೋಡಣೆ</span></span>
+        <span id="chk-1">👉</span>
+      </div>
+      <div class="step-desc en">Pour 50 ml warm water (solvent) into all 4 transparent cups.</div>
+      <div class="step-desc kn">ನಾಲ್ಕು ಗ್ಲಾಸ್‌ಗಳಲ್ಲಿಯೂ ತಲಾ 50 ml ಬೆಚ್ಚಗಿನ ನೀರನ್ನು (ದ್ರಾವಕ) ಹಾಕಿ.</div>
+    </div>
+
+    <!-- Step 2 -->
+    <div class="step-card" id="card-step-2">
+      <div class="step-top">
+        <span><span class="en">Step 2: Dissolve Sugar (Solute)</span> <span class="kn">ಹಂತ ೨: ಸಕ್ಕರೆ ಬೆರೆಸುವುದು</span></span>
+        <span id="chk-2">⏳</span>
+      </div>
+      <div class="step-desc en">Add 0, 2, 4, and 6 spoons of sugar into Cups 1–4 and stir until completely dissolved.</div>
+      <div class="step-desc kn">ಕಪ್ 1ಕ್ಕೆ 0, ಕಪ್ 2ಕ್ಕೆ 2, ಕಪ್ 3ಕ್ಕೆ 4 ಮತ್ತು ಕಪ್ 4ಕ್ಕೆ 6 ಚಮಚ ಸಕ್ಕರೆ ಹಾಕಿ ಕರಗಿಸಿ.</div>
+    </div>
+
+    <!-- Step 3 -->
+    <div class="step-card" id="card-step-3">
+      <div class="step-top">
+        <span><span class="en">Step 3: Add Food Colors</span> <span class="kn">ಹಂತ ೩: ಬಣ್ಣ ಬೆರೆಸುವುದು</span></span>
+        <span id="chk-3">⏳</span>
+      </div>
+      <div class="step-desc en">Color Cup 1 Red, Cup 2 Yellow, Cup 3 Green, and Cup 4 Blue.</div>
+      <div class="step-desc kn">ಕಪ್ 1ಕ್ಕೆ ಕೆಂಪು, ಕಪ್ 2ಕ್ಕೆ ಹಳದಿ, ಕಪ್ 3ಕ್ಕೆ ಹಸಿರು ಮತ್ತು ಕಪ್ 4ಕ್ಕೆ ನೀಲಿ ಬಣ್ಣ ಬೆರೆಸಿ.</div>
+    </div>
+
+    <!-- Step 4 -->
+    <div class="step-card" id="card-step-4">
+      <div class="step-top">
+        <span><span class="en">Step 4: Build Density Tower</span> <span class="kn">ಹಂತ ೪: ಸಾಂದ್ರತೆಯ ಗೋಪುರ ನಿರ್ಮಾಣ</span></span>
+        <span id="chk-4">⏳</span>
+      </div>
+      <div class="step-desc en">Pour from highest density (Cup 4 Blue, 6 spoons) to lowest (Cup 1 Red, 0 spoons) slowly along the glass wall!</div>
+      <div class="step-desc kn">ಮೊದಲು ಅತಿ ಹೆಚ್ಚು ಸಾಂದ್ರತೆಯ ನೀಲಿ (6 ಚಮಚ), ನಂತರ ಹಸಿರು (4), ಹಳದಿ (2) ಮತ್ತು ಕೊನೆಯಲ್ಲಿ ಕೆಂಪು (0) ದ್ರಾವಣವನ್ನು ನಿಧಾನವಾಗಿ ಸುರಿಯಿರಿ.</div>
+    </div>
+
+    <!-- Step 5 -->
+    <div class="step-card" id="card-step-5">
+      <div class="step-top">
+        <span><span class="en">Step 5: Observe Rainbow Layers</span> <span class="kn">ಹಂತ ೫: ಬಣ್ಣಗಳ ಪದರ ವೀಕ್ಷಣೆ</span></span>
+        <span id="chk-5">⏳</span>
+      </div>
+      <div class="step-desc en">Keep the tall glass steady and observe how different densities stack without mixing.</div>
+      <div class="step-desc kn">ಗಾಜಿನ ಲೋಟವನ್ನು ಅಲುಗಾಡಿಸದೆ ಸ್ಥಿರವಾಗಿ ಇರಿಸಿ ಮತ್ತು ನಾಲ್ಕು ಬಣ್ಣಗಳ ಪದರಗಳನ್ನು ಗಮನಿಸಿ.</div>
+    </div>
+
+    <!-- Interactive Action Box -->
+    <div class="action-box">
+      <button id="btn-main-step" class="primary-cta">
+        <span id="cta-en" class="en">💧 Pour 50 ml Warm Water into 4 Cups</span>
+        <span id="cta-kn" class="kn">💧 4 ಕಪ್‌ಗಳಿಗೆ 50 ml ಬೆಚ್ಚಗಿನ ನೀರು ಹಾಕಿ</span>
+      </button>
+
+      <!-- Step 4 Individual Cup Pour Buttons (also clickable in 3D!) -->
+      <div id="cup-pour-grid" class="cup-pour-grid hidden">
+        <button class="cup-btn" data-cup="4" style="border-color:#3b82f6;">
+          <span>🔵 Cup 4 • Blue (6 sp)</span>
+          <span class="kn" style="font-size:9.5px;color:#93c5fd;">ಕಪ್ 4 • ನೀಲಿ (ಗರಿಷ್ಠ ಸಾಂದ್ರತೆ)</span>
+        </button>
+        <button class="cup-btn" data-cup="3" style="border-color:#22c55e;">
+          <span>🟢 Cup 3 • Green (4 sp)</span>
+          <span class="kn" style="font-size:9.5px;color:#86efac;">ಕಪ್ 3 • ಹಸಿರು (4 ಚಮಚ)</span>
+        </button>
+        <button class="cup-btn" data-cup="2" style="border-color:#eab308;">
+          <span>🟡 Cup 2 • Yellow (2 sp)</span>
+          <span class="kn" style="font-size:9.5px;color:#fde047;">ಕಪ್ 2 • ಹಳದಿ (2 ಚಮಚ)</span>
+        </button>
+        <button class="cup-btn" data-cup="1" style="border-color:#ef4444;">
+          <span>🔴 Cup 1 • Red (0 sp)</span>
+          <span class="kn" style="font-size:9.5px;color:#fca5a5;">ಕಪ್ 1 • ಕೆಂಪು (ಕನಿಷ್ಠ ಸಾಂದ್ರತೆ)</span>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Right Panel: Observation Table, Science Concepts & Quiz -->
+  <aside class="right-panel glass-panel">
+    <div class="panel-head">
+      <span>
+        <span class="en">OBSERVATION TABLE</span>
+        <span class="kn"> • ಫಲಿತಾಂಶ ಗುರುತಿಸುವಿಕೆ</span>
+      </span>
+    </div>
+
+    <table class="obs-table">
+      <thead>
+        <tr>
+          <th><span class="en">Cup &amp; Color</span><span class="kn"><br/>ಕಪ್ ಮತ್ತು ಬಣ್ಣ</span></th>
+          <th><span class="en">Sugar</span><span class="kn"><br/>ಸಕ್ಕರೆ</span></th>
+          <th><span class="en">Density</span><span class="kn"><br/>ಸಾಂದ್ರತೆ</span></th>
+          <th><span class="en">Layer Position</span><span class="kn"><br/>ಲೋಟದಲ್ಲಿ ಸ್ಥಾನ</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="swatch-dot" style="background:#2563eb;"></span><span class="en">Cup 4 - Blue</span><span class="kn">ಕಪ್ 4 - ನೀಲಿ</span></td>
+          <td><span class="en">6 spoons</span><span class="kn">6 ಚಮಚ</span></td>
+          <td id="obs-den-4"><span class="en">Highest Density</span><span class="kn">ಗರಿಷ್ಠ ಸಾಂದ್ರತೆ</span></td>
+          <td id="obs-pos-4">—</td>
+        </tr>
+        <tr>
+          <td><span class="swatch-dot" style="background:#16a34a;"></span><span class="en">Cup 3 - Green</span><span class="kn">ಕಪ್ 3 - ಹಸಿರು</span></td>
+          <td><span class="en">4 spoons</span><span class="kn">4 ಚಮಚ</span></td>
+          <td id="obs-den-3"><span class="en">High Density</span><span class="kn">ಹೆಚ್ಚು ಸಾಂದ್ರತೆ</span></td>
+          <td id="obs-pos-3">—</td>
+        </tr>
+        <tr>
+          <td><span class="swatch-dot" style="background:#eab308;"></span><span class="en">Cup 2 - Yellow</span><span class="kn">ಕಪ್ 2 - ಹಳದಿ</span></td>
+          <td><span class="en">2 spoons</span><span class="kn">2 ಚಮಚ</span></td>
+          <td id="obs-den-2"><span class="en">Low Density</span><span class="kn">ಕಡಿಮೆ ಸಾಂದ್ರತೆ</span></td>
+          <td id="obs-pos-2">—</td>
+        </tr>
+        <tr>
+          <td><span class="swatch-dot" style="background:#dc2626;"></span><span class="en">Cup 1 - Red</span><span class="kn">ಕಪ್ 1 - ಕೆಂಪು</span></td>
+          <td><span class="en">0 spoons</span><span class="kn">0 ಚಮಚ</span></td>
+          <td id="obs-den-1"><span class="en">Lowest Density</span><span class="kn">ಕನಿಷ್ಠ ಸಾಂದ್ರತೆ</span></td>
+          <td id="obs-pos-1">—</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="concept-card">
+      <div>
+        <strong><span class="en">Solute, Solvent &amp; Solution:</span> <span class="kn">ದ್ರಾವ್ಯ, ದ್ರಾವಕ ಮತ್ತು ದ್ರಾವಣ:</span></strong>
+      </div>
+      <div class="en">
+        • <strong>Solvent:</strong> Warm water (50 ml)<br/>
+        • <strong>Solute:</strong> Sugar dissolved in water<br/>
+        • <strong>Key Principle:</strong> More dissolved sugar increases solution density. Denser liquids sink to the bottom while less dense liquids float on top!
+      </div>
+      <div class="kn" style="color:var(--text-kn);">
+        • <strong>ದ್ರಾವಕ:</strong> ಬೆಚ್ಚಗಿನ ನೀರು (50 ml)<br/>
+        • <strong>ದ್ರಾವ್ಯ:</strong> ನೀರಿನಲ್ಲಿ ಕರಗುವ ಸಕ್ಕರೆ<br/>
+        • <strong>ತತ್ವ:</strong> ನೀರಿನಲ್ಲಿ ಕರಗಿರುವ ಸಕ್ಕರೆಯ ಪ್ರಮಾಣ ಹೆಚ್ಚಾದಂತೆ ದ್ರಾವಣದ ಸಾಂದ್ರತೆಯೂ ಹೆಚ್ಚಾಗುತ್ತದೆ. ಹೆಚ್ಚು ಸಾಂದ್ರತೆಯ ದ್ರಾವಣ ತಳಭಾಗದಲ್ಲೂ ಕಡಿಮೆ ಸಾಂದ್ರತೆಯ ದ್ರಾವಣ ಮೇಲ್ಭಾಗದಲ್ಲೂ ನಿಲ್ಲುತ್ತದೆ.
+      </div>
+    </div>
+
+    <button id="btn-open-quiz" class="quiz-launch-btn">
+      <span>📝 <span class="en">Activity Questions (5 Qs)</span> <span class="kn">• ಪ್ರಶ್ನೆಗಳು (ಪರೀಕ್ಷೆ)</span></span>
+      <span style="font-size:10.5px;color:var(--text-kn);">Test your understanding • ನಿಮ್ಮ ತಿಳುವಳಿಕೆಯನ್ನು ಪರೀಕ್ಷಿಸಿ</span>
+    </button>
+  </aside>
+
+  <!-- Mobile Bottom Tab Bar -->
+  <div class="mobile-tab-bar">
+    <button class="mob-tab-btn active" data-mob-tab="steps">
+      <span>🧪 Steps</span>
+      <span class="kn-tiny">ಹಂತಗಳು</span>
+    </button>
+    <button class="mob-tab-btn" data-mob-tab="table">
+      <span>📊 Table &amp; Quiz</span>
+      <span class="kn-tiny">ಫಲಿತಾಂಶ ಮತ್ತು ಪ್ರಶ್ನೆ</span>
+    </button>
+    <button class="mob-tab-btn" data-mob-tab="none">
+      <span>🌈 3D Only</span>
+      <span class="kn-tiny">3D ನೋಟ</span>
+    </button>
+  </div>
+
+  <!-- Activity Control Bar: Prev / Step / Next / Exit + Show UI -->
+  <div id="activity-bar" class="activity-bar" role="toolbar" aria-label="Activity Controls">
+    <button id="btn-act-prev" class="act-btn" disabled title="Previous Step">
+      <span>◀ Prev</span>
+      <span class="kn-tiny">ಹಿಂದಿನ</span>
+    </button>
+
+    <div class="act-status-pill">
+      <span id="act-step-main" class="act-step-main">STEP 1 / 5</span>
+      <span id="act-step-sub" class="act-step-sub">Add Warm Water</span>
+    </div>
+
+    <button id="btn-act-next" class="act-btn act-btn-next" title="Next Step">
+      <span>Next ▶</span>
+      <span class="kn-tiny">ಮುಂದಿನ</span>
+    </button>
+
+    <button id="btn-act-exit" class="act-btn act-btn-exit" title="Reset &amp; Exit">
+      <span>✕ Exit</span>
+      <span class="kn-tiny">ನಿರ್ಗಮಿಸಿ</span>
+    </button>
+
+    <button id="btn-show-ui" class="act-btn btn-show-ui-float" title="Show All UI">
+      <span>👁️ Show</span>
+      <span class="kn-tiny">ತೋರಿಸಿ</span>
+    </button>
+  </div>
+
+  <!-- Worksheet Questions Quiz Modal -->
+  <div id="quiz-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+    <div class="quiz-modal glass-panel">
+      <div class="quiz-header">
+        <div>
+          <div style="font-size:10px;color:var(--cyan);font-weight:700;">STEM WORKSHEET QUESTIONS • ಪ್ರಶ್ನೆಗಳು</div>
+          <h3 id="q-progress" style="margin:2px 0 0;font-size:16px;">Question 1 / 5</h3>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span id="q-score" style="font-size:12px;font-weight:700;color:var(--green);">Score: 0</span>
+          <button id="btn-quiz-close" class="hud-btn">✕</button>
+        </div>
+      </div>
+
+      <div class="quiz-q-box">
+        <div id="q-text-en" class="en" style="font-size:14px;font-weight:700;"></div>
+        <div id="q-text-kn" class="kn" style="font-size:13.5px;font-weight:600;color:var(--text-kn);"></div>
+      </div>
+
+      <div id="q-options" class="quiz-opts"></div>
+
+      <div id="q-feedback" class="quiz-fb hidden"></div>
+
+      <div class="quiz-footer">
+        <button id="btn-q-prev" class="hud-btn" disabled>◀ Prev / ಹಿಂದಿನ</button>
+        <button id="btn-q-next" class="hud-btn active hidden">Next ▶ / ಮುಂದಿನ</button>
+        <button id="btn-q-exit" class="hud-btn" style="border-color:var(--red);color:#fecdd3;">✕ Exit / ನಿರ್ಗಮಿಸಿ</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      'use strict';
+
+      function loadScript(url) {
+        return new Promise((resolve, reject) => {
+          const s = document.createElement('script');
+          s.src = url;
+          s.onload = resolve;
+          s.onerror = reject;
+          document.head.appendChild(s);
+        });
+      }
+
+      async function ensureThree() {
+        if (typeof THREE !== 'undefined' && typeof THREE.OrbitControls !== 'undefined') return true;
+        const providers = [
+          {
+            three: 'https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js',
+            orbit: 'https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js'
+          },
+          {
+            three: 'https://unpkg.com/three@0.147.0/build/three.min.js',
+            orbit: 'https://unpkg.com/three@0.147.0/examples/js/controls/OrbitControls.js'
+          }
+        ];
+        for (const p of providers) {
+          try {
+            if (typeof THREE === 'undefined') await loadScript(p.three);
+            if (typeof THREE !== 'undefined' && typeof THREE.OrbitControls === 'undefined') await loadScript(p.orbit);
+            if (typeof THREE !== 'undefined' && typeof THREE.OrbitControls !== 'undefined') return true;
+          } catch (e) {}
+        }
+        return false;
+      }
+
+      /* Worksheet Questions from DIET Mysore STEM Activity Sheet */
+      const QUESTIONS = [
+        {
+          en: '1. Even though all 4 cups contain water, what causes the sugar solutions to stay in separate layers without mixing?',
+          kn: '೧. ನಾಲ್ಕೂ ಕಪ್‌ಗಳಲ್ಲಿರುವುದು ನೀರೇ ಆಗಿದ್ದರೂ, ಅವು ಒಂದಕ್ಕೊಂದು ಬೆರೆಯದೆ ಪದರಗಳಾಗಿ ನಿಲ್ಲಲು ಸಕ್ಕರೆ ಕಣಗಳು ಹೇಗೆ ಕಾರಣವಾದವು?',
+          options: [
+            { en: 'Different amounts of dissolved sugar create different densities', kn: 'ವಿಭಿನ್ನ ಪ್ರಮಾಣದ ಸಕ್ಕರೆ ಕರಗಿರುವುದರಿಂದ ಸಾಂದ್ರತೆಯಲ್ಲಿ ವ್ಯತ್ಯಾಸ ಉಂಟಾಗುತ್ತದೆ' },
+            { en: 'Food coloring changes the temperature of water', kn: 'ಆಹಾರ ಬಣ್ಣವು ನೀರಿನ ತಾಪಮಾನವನ್ನು ಬದಲಾಯಿಸುತ್ತದೆ' },
+            { en: 'The tall glass has invisible plastic dividers', kn: 'ಗಾಜಿನ ಲೋಟದ ಒಳಗೆ ಪ್ಲಾಸ್ಟಿಕ್ ವಿಭಜಕಗಳಿವೆ' },
+            { en: 'Warm water turns into ice at the bottom', kn: 'ಬೆಚ್ಚಗಿನ ನೀರು ತಳದಲ್ಲಿ ಮಂಜುಗಡ್ಡೆಯಾಗುತ್ತದೆ' }
+          ],
+          correct: 0,
+          expEn: 'More dissolved sugar packs more mass into the same 50 ml volume, increasing density so denser layers stay below lighter ones.',
+          expKn: 'ಒಂದೇ ಪ್ರಮಾಣದ ನೀರಿನಲ್ಲಿ ಹೆಚ್ಚು ಸಕ್ಕರೆ ಕರಗಿದಾಗ ದ್ರವದ ಸಾಂದ್ರತೆ ಹೆಚ್ಚಾಗುತ್ತದೆ. ಆದ್ದರಿಂದ ಹೆಚ್ಚು ಸಾಂದ್ರತೆಯ ದ್ರಾವಣ ಕೆಳಗೂ ಕಡಿಮೆ ಸಾಂದ್ರತೆಯ ದ್ರಾವಣ ಮೇಲೂ ನಿಲ್ಲುತ್ತದೆ.'
+        },
+        {
+          en: '2. What happens if we pour the Red water (0 spoons) first and then pour the Blue solution (6 spoons) on top of it?',
+          kn: '೨. ಒಂದು ವೇಳೆ ನಾವು ಮೊದಲು ಕೆಂಪು ನೀರನ್ನು ಹಾಕಿ ಅದರ ಮೇಲಿಂದ ನೀಲಿ ದ್ರಾವಣವನ್ನು ಸುರಿದರೆ ಪದರಗಳು ಉಂಟಾಗುತ್ತವೆಯೇ? ಏಕೆ?',
+          options: [
+            { en: 'No, the denser Blue solution sinks and mixes with Red', kn: 'ಇಲ್ಲ, ಹೆಚ್ಚು ಸಾಂದ್ರತೆಯ ನೀಲಿ ದ್ರಾವಣ ತಳಕ್ಕೆ ಇಳಿದು ಕೆಂಪು ನೀರಿನೊಂದಿಗೆ ಬೆರೆಯುತ್ತದೆ' },
+            { en: 'Yes, Blue will float above Red', kn: 'ಹೌದು, ನೀಲಿ ದ್ರಾವಣ ಕೆಂಪು ನೀರಿನ ಮೇಲೆ ತೇಲುತ್ತದೆ' },
+            { en: 'Both liquids will evaporate immediately', kn: 'ಎರಡೂ ದ್ರವಗಳು ತಕ್ಷಣ ಆವಿಯಾಗುತ್ತವೆ' },
+            { en: 'Red water becomes heavier than Blue', kn: 'ಕೆಂಪು ನೀರು ನೀಲಿಗಿಂತ ಭಾರವಾಗುತ್ತದೆ' }
+          ],
+          correct: 0,
+          expEn: 'Because the Blue solution (6 spoons) is denser than Red water (0 spoons), pouring it on top makes it sink through and mix!',
+          expKn: 'ನೀಲಿ ದ್ರಾವಣದ ಸಾಂದ್ರತೆ ಕೆಂಪು ನೀರಿಗಿಂತ ಹೆಚ್ಚಾಗಿರುವುದರಿಂದ ಅದನ್ನು ಮೇಲಿಂದ ಸುರಿದಾಗ ತಳಕ್ಕೆ ಇಳಿದು ಎರಡೂ ಬೆರೆತುಹೋಗುತ್ತವೆ.'
+        },
+        {
+          en: '3. If you keep adding more sugar to Cup 4, at one stage sugar stops dissolving and settles at the bottom. What is such a solution called?',
+          kn: '೩. ಕಪ್ 4ಕ್ಕೆ ಇನ್ನೂ ಹೆಚ್ಚು ಸಕ್ಕರೆ ಹಾಕುತ್ತಾ ಹೋದರೆ ಒಂದು ಹಂತದಲ್ಲಿ ಸಕ್ಕರೆ ಕರಗದೆ ತಳದಲ್ಲಿ ಉಳಿಯುತ್ತದೆ. ಇಂತಹ ದ್ರಾವಣವನ್ನು ಏನೆಂದು ಕರೆಯುತ್ತಾರೆ?',
+          options: [
+            { en: 'Saturated Solution', kn: 'ಪರ್ಯಾಪ್ತ ದ್ರಾವಣ (Saturated Solution)' },
+            { en: 'Pure Solvent', kn: 'ಶುದ್ಧ ದ್ರಾವಕ' },
+            { en: 'Dilute Solution', kn: 'ದುರ್ಬಲ ದ್ರಾವಣ' },
+            { en: 'Gaseous Mixture', kn: 'ಅನಿಲ ಮಿಶ್ರಣ' }
+          ],
+          correct: 0,
+          expEn: 'When a solvent cannot dissolve any more solute at a given temperature, it is called a Saturated Solution (ಪರ್ಯಾಪ್ತ ದ್ರಾವಣ).',
+          expKn: 'ನಿರ್ದಿಷ್ಟ ತಾಪಮಾನದಲ್ಲಿ ದ್ರಾವಕವು ಇನ್ನೂ ಹೆಚ್ಚಿನ ದ್ರಾವ್ಯವನ್ನು ಕರಗಿಸಿಕೊಳ್ಳಲು ಸಾಧ್ಯವಾಗದ ಸ್ಥಿತಿಯನ್ನು ಪರ್ಯಾಪ್ತ ದ್ರಾವಣ ಎನ್ನುತ್ತಾರೆ.'
+        },
+        {
+          en: '4. Why is it easier to swim in salty sea water than in normal river water? Explain based on density.',
+          kn: '೪. ಸಾಮಾನ್ಯ ನದಿಯ ನೀರಿಗಿಂತ ಸಮುದ್ರದ ಉಪ್ಪು ನೀರಿನಲ್ಲಿ ಈಜುವುದು ಹೆಚ್ಚು ಸುಲಭ ಏಕೆ? ಸಾಂದ್ರತೆಯ ಆಧಾರದ ಮೇಲೆ ವಿವರಿಸಿ.',
+          options: [
+            { en: 'Dissolved salt increases sea water density, giving greater buoyant upthrust', kn: 'ಕರಗಿರುವ ಉಪ್ಪಿನಿಂದ ಸಮುದ್ರದ ನೀರಿನ ಸಾಂದ್ರತೆ ಹೆಚ್ಚಾಗಿ ಹೆಚ್ಚಿನ ಮೇಲ್ಮುಖ ಒತ್ತಡ (ತೇಲುವಿಕೆ) ಸಿಗುತ್ತದೆ' },
+            { en: 'River water has higher density than sea water', kn: 'ನದಿಯ ನೀರಿನ ಸಾಂದ್ರತೆ ಸಮುದ್ರದ ನೀರಿಗಿಂತ ಹೆಚ್ಚಾಗಿರುತ್ತದೆ' },
+            { en: 'Sea water has zero dissolved solutes', kn: 'ಸಮುದ್ರದ ನೀರಿನಲ್ಲಿ ಯಾವುದೇ ದ್ರಾವ್ಯಗಳಿರುವುದಿಲ್ಲ' },
+            { en: 'River water is warmer than the Sun', kn: 'ನದಿಯ ನೀರು ಸೂರ್ಯನಿಗಿಂತ ಬಿಸಿಯಾಗಿರುತ್ತದೆ' }
+          ],
+          correct: 0,
+          expEn: 'Sea water contains dissolved salts (solute), making it denser than fresh river water and providing stronger upward buoyant force.',
+          expKn: 'ಸಮುದ್ರದ ನೀರಿನಲ್ಲಿ ಉಪ್ಪು ಕರಗಿರುವುದರಿಂದ ಅದರ ಸಾಂದ್ರತೆ ನದಿಯ ನೀರಿಗಿಂತ ಹೆಚ್ಚಾಗಿರುತ್ತದೆ. ಇದರಿಂದ ದೇಹಕ್ಕೆ ಹೆಚ್ಚಿನ ತೇಲುವ ಬಲ ಸಿಗುತ್ತದೆ.'
+        },
+        {
+          en: '5. Identify the Solute, Solvent, and Solution in the lemon juice (Nimbu Sharbat) we prepare in summer.',
+          kn: '೫. ಬೇಸಿಗೆಯಲ್ಲಿ ನಾವು ತಯಾರಿಸುವ ನಿಂಬೆ ಶರಬತ್ತಿನಲ್ಲಿ ದ್ರಾವ್ಯ, ದ್ರಾವಕ ಮತ್ತು ದ್ರಾವಣ ಯಾವುವು ಎಂದು ಗುರುತಿಸಿ.',
+          options: [
+            { en: 'Solute: Sugar, Salt & Lemon juice | Solvent: Water | Solution: Lemon Sharbat', kn: 'ದ್ರಾವ್ಯ: ಸಕ್ಕರೆ, ಉಪ್ಪು, ನಿಂಬೆರಸ | ದ್ರಾವಕ: ನೀರು | ದ್ರಾವಣ: ನಿಂಬೆ ಶರಬತ್ತು' },
+            { en: 'Solute: Water | Solvent: Sugar | Solution: Glass', kn: 'ದ್ರಾವ್ಯ: ನೀರು | ದ್ರಾವಕ: ಸಕ್ಕರೆ | ದ್ರಾವಣ: ಗಾಜಿನ ಲೋಟ' },
+            { en: 'Solute: Glass | Solvent: Spoon | Solution: Water', kn: 'ದ್ರಾವ್ಯ: ಗಾಜು | ದ್ರಾವಕ: ಚಮಚ | ದ್ರಾವಣ: ನೀರು' },
+            { en: 'Solute: Ice | Solvent: Air | Solution: Salt', kn: 'ದ್ರಾವ್ಯ: ಮಂಜುಗಡ್ಡೆ | ದ್ರಾವಕ: ಗಾಳಿ | ದ್ರಾವಣ: ಉಪ್ಪು' }
+          ],
+          correct: 0,
+          expEn: 'Water is the Solvent (ದ್ರಾವಕ), Sugar/Salt/Lemon juice are the Solutes (ದ್ರಾವ್ಯ), and the resulting drink is the Solution (ದ್ರಾವಣ)!',
+          expKn: 'ನೀರು ದ್ರಾವಕ (Solvent), ಸಕ್ಕರೆ-ಉಪ್ಪು-ನಿಂಬೆರಸ ದ್ರಾವ್ಯಗಳು (Solute) ಮತ್ತು ಸಿದ್ಧವಾದ ಶರಬತ್ತು ದ್ರಾವಣವಾಗಿದೆ (Solution).'
+        }
+      ];
+
+      function initLab() {
+        let soundOn = true;
+        let audioCtx = null;
+        function playTone(freq, dur = 0.12, type = 'sine') {
+          if (!soundOn) return;
+          try {
+            const Ctx = window.AudioContext || window.webkitAudioContext;
+            if (!Ctx) return;
+            if (!audioCtx) audioCtx = new Ctx();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+            osc.connect(gain).connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + dur);
+          } catch (e) {}
+        }
+
+        const canvas = document.getElementById('webgl-canvas');
+        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.outputEncoding = THREE.sRGBEncoding;
+
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x050b1c);
+        scene.fog = new THREE.FogExp2(0x050b1c, 0.026);
+
+        const camera = new THREE.PerspectiveCamera(44, window.innerWidth / window.innerHeight, 0.1, 100);
+        const CAM_DESKTOP = { pos: new THREE.Vector3(0, 4.8, 11.4), target: new THREE.Vector3(0, 1.4, 0) };
+        const CAM_MOBILE = { pos: new THREE.Vector3(0, 5.8, 14.2), target: new THREE.Vector3(0, 1.1, 0) };
+        camera.position.copy(CAM_DESKTOP.pos);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.07;
+        controls.target.copy(CAM_DESKTOP.target);
+        controls.minDistance = 3.5;
+        controls.maxDistance = 18;
+        controls.maxPolarAngle = Math.PI * 0.48;
+
+        scene.add(new THREE.HemisphereLight(0xbbe0ff, 0x0f172a, 0.9));
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1.45);
+        dirLight.position.set(5, 12, 8);
+        dirLight.castShadow = true;
+        dirLight.shadow.mapSize.set(2048, 2048);
+        scene.add(dirLight);
+
+        const towerGlow = new THREE.PointLight(0x22e6ff, 1.1, 8);
+        towerGlow.position.set(3.2, 2.0, 1.2);
+        scene.add(towerGlow);
+
+        const grid = new THREE.GridHelper(28, 28, 0x22e6ff, 0x0f1e3a);
+        grid.position.y = -1.0;
+        scene.add(grid);
+
+        const bench = new THREE.Mesh(
+          new THREE.BoxGeometry(12.4, 0.35, 5.4),
+          new THREE.MeshStandardMaterial({ color: 0x16243f, roughness: 0.45, metalness: 0.3 })
+        );
+        bench.position.set(0, -0.18, 0.25);
+        bench.receiveShadow = true;
+        scene.add(bench);
+
+        const benchTrim = new THREE.Mesh(
+          new THREE.BoxGeometry(12.46, 0.06, 5.46),
+          new THREE.MeshBasicMaterial({ color: 0x22e6ff })
+        );
+        benchTrim.position.set(0, -0.02, 0.25);
+        scene.add(benchTrim);
+
+        function makeBadge(line1, line2, accent, scaleW = 1.65) {
+          const c = document.createElement('canvas');
+          c.width = 360;
+          c.height = 112;
+          const ctx = c.getContext('2d');
+          const tex = new THREE.CanvasTexture(c);
+          const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true }));
+          sp.scale.set(scaleW, scaleW * 0.31, 1);
+
+          sp.userData.updateText = (l1, l2, acc) => {
+            ctx.clearRect(0, 0, 360, 112);
+            ctx.fillStyle = 'rgba(6, 14, 34, 0.9)';
+            ctx.strokeStyle = acc || accent;
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            if (ctx.roundRect) ctx.roundRect(6, 6, 348, 100, 18);
+            else ctx.rect(6, 6, 348, 100);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 25px "Space Grotesk", "Noto Sans Kannada", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(l1, 180, 48);
+
+            ctx.fillStyle = '#a6d9f7';
+            ctx.font = '600 21px "Noto Sans Kannada", sans-serif';
+            ctx.fillText(l2, 180, 84);
+            tex.needsUpdate = true;
+          };
+
+          sp.userData.updateText(line1, line2, accent);
+          scene.add(sp);
+          return sp;
+        }
+
+        // Front Label Plate directly attached on each Cup/Bottle
+        function makeCupFrontLabel(cupNum, spoons, colorNameEn, colorNameKn, accentCss) {
+          const c = document.createElement('canvas');
+          c.width = 256;
+          c.height = 160;
+          const ctx = c.getContext('2d');
+          const tex = new THREE.CanvasTexture(c);
+          const mesh = new THREE.Mesh(
+            new THREE.PlaneGeometry(0.76, 0.48),
+            new THREE.MeshBasicMaterial({ map: tex, transparent: true, side: THREE.DoubleSide })
+          );
+
+          mesh.userData.updateLabel = (addedSpoons, colored) => {
+            ctx.clearRect(0, 0, 256, 160);
+            ctx.fillStyle = 'rgba(5, 13, 32, 0.92)';
+            ctx.strokeStyle = colored ? accentCss : '#38bdf8';
+            ctx.lineWidth = 6;
+            ctx.beginPath();
+            if (ctx.roundRect) ctx.roundRect(6, 6, 244, 148, 20);
+            else ctx.rect(6, 6, 244, 148);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = '#38bdf8';
+            ctx.font = 'bold 26px "Space Grotesk", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(`CUP ${cupNum} • ಕಪ್ ${cupNum}`, 128, 44);
+
+            ctx.fillStyle = '#fde047';
+            ctx.font = 'bold 28px "Space Grotesk", "Noto Sans Kannada", sans-serif';
+            ctx.fillText(`${addedSpoons} / ${spoons} Spoons`, 128, 88);
+
+            ctx.fillStyle = colored ? '#ffffff' : '#94a3b8';
+            ctx.font = '600 22px "Space Grotesk", "Noto Sans Kannada", sans-serif';
+            ctx.fillText(colored ? `${colorNameEn} • ${colorNameKn}` : `${spoons} ಚಮಚ ಸಕ್ಕರೆ`, 128, 128);
+            tex.needsUpdate = true;
+          };
+
+          mesh.userData.updateLabel(0, false);
+          return mesh;
+        }
+
+        const CUP_CONFIGS = [
+          { id: 1, x: -4.2, spoons: 0, colorHex: 0xef4444, css: '#ef4444', cEn: 'Red', cKn: 'ಕೆಂಪು', en: 'Cup 1 • 0 Spoons', kn: 'ಕಪ್ 1 • 0 ಚಮಚ' },
+          { id: 2, x: -2.3, spoons: 2, colorHex: 0xfacc15, css: '#facc15', cEn: 'Yellow', cKn: 'ಹಳದಿ', en: 'Cup 2 • 2 Spoons', kn: 'ಕಪ್ 2 • 2 ಚಮಚ' },
+          { id: 3, x: -0.4, spoons: 4, colorHex: 0x22c55e, css: '#22c55e', cEn: 'Green', cKn: 'ಹಸಿರು', en: 'Cup 3 • 4 Spoons', kn: 'ಕಪ್ 3 • 4 ಚಮಚ' },
+          { id: 4, x: 1.5, spoons: 6, colorHex: 0x2563eb, css: '#2563eb', cEn: 'Blue', cKn: 'ನೀಲಿ', en: 'Cup 4 • 6 Spoons', kn: 'ಕಪ್ 4 • 6 ಚಮಚ' }
+        ];
+
+        const cups = {};
+        const clickableMeshes = [];
+        const all3DLabels = [];
+        const draggables = [];
+        let labelsVisible = true;
+
+        CUP_CONFIGS.forEach((cfg) => {
+          const group = new THREE.Group();
+          group.position.set(cfg.x, 0, -0.15);
+          group.userData = {
+            dragType: 'cup',
+            cupId: cfg.id,
+            homePos: new THREE.Vector3(cfg.x, 0, -0.15)
+          };
+
+          const wall = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.56, 0.52, 1.48, 32, 1, true),
+            new THREE.MeshPhysicalMaterial({
+              color: 0xdbeafe,
+              transparent: true,
+              opacity: 0.34,
+              roughness: 0.08,
+              side: THREE.DoubleSide,
+              depthWrite: false
+            })
+          );
+          wall.position.y = 0.75;
+          wall.userData.cupId = cfg.id;
+          clickableMeshes.push(wall);
+
+          const base = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.53, 0.53, 0.05, 32),
+            new THREE.MeshStandardMaterial({ color: 0x93c5fd, transparent: true, opacity: 0.7 })
+          );
+          base.position.y = 0.025;
+
+          const liquidMat = new THREE.MeshStandardMaterial({
+            color: 0xb8e6ff,
+            transparent: true,
+            opacity: 0.82,
+            roughness: 0.15
+          });
+          const liquid = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.51, 0.48, 0.96, 28),
+            liquidMat
+          );
+          liquid.position.y = 0.52;
+          liquid.visible = false;
+          liquid.userData.cupId = cfg.id;
+          clickableMeshes.push(liquid);
+
+          // Visible Sugar Level Mound at Bottom of Cup (shows 1, 2, 3, 4 proportional sugar heights!)
+          const moundHeight = cfg.spoons === 0 ? 0.01 : 0.12 + cfg.spoons * 0.055;
+          const sugarPile = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.45, 0.47, moundHeight, 28),
+            new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.55 })
+          );
+          sugarPile.position.y = 0.05 + moundHeight * 0.5;
+          sugarPile.scale.set(1, 0.01, 1);
+          sugarPile.visible = false;
+
+          // Front Label Sticker on Cup
+          const frontLabel = makeCupFrontLabel(cfg.id, cfg.spoons, cfg.cEn, cfg.cKn, cfg.css);
+          frontLabel.position.set(0, 0.74, 0.56);
+          all3DLabels.push(frontLabel);
+
+          group.add(wall, base, liquid, sugarPile, frontLabel);
+          scene.add(group);
+          draggables.push(group);
+
+          const badge = makeBadge(cfg.en, cfg.kn, cfg.css, 1.55);
+          badge.position.set(cfg.x, 1.9, -0.15);
+          all3DLabels.push(badge);
+
+          cups[cfg.id] = { cfg, group, liquid, liquidMat, sugarPile, moundHeight, frontLabel, badge, poured: false };
+        });
+
+        // =====================================================================
+        // TABLE PROPS IN FRONT ROW: Warm Water Pitcher, Sugar Bowl + Spoon, 4 Color Bottles
+        // =====================================================================
+        // 1. Warm Water Pitcher (left front: x = -4.3, z = 1.65)
+        const pitcherGroup = new THREE.Group();
+        pitcherGroup.position.set(-4.3, 0, 1.65);
+        pitcherGroup.userData = {
+          dragType: 'pitcher',
+          homePos: new THREE.Vector3(-4.3, 0, 1.65)
+        };
+        const pitcherBody = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.44, 0.38, 1.15, 28, 1, true),
+          new THREE.MeshPhysicalMaterial({ color: 0xe0f2fe, transparent: true, opacity: 0.42, side: THREE.DoubleSide, depthWrite: false })
+        );
+        pitcherBody.position.y = 0.58;
+        const pitcherWater = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.4, 0.36, 0.85, 24),
+          new THREE.MeshStandardMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.75 })
+        );
+        pitcherWater.position.y = 0.44;
+        pitcherGroup.add(pitcherBody, pitcherWater);
+        scene.add(pitcherGroup);
+        draggables.push(pitcherGroup);
+        const pitcherBadge = makeBadge('Warm Water', 'ಬೆಚ್ಚಗಿನ ನೀರು', '#38bdf8', 1.3);
+        pitcherBadge.position.set(-4.3, 1.48, 1.65);
+        all3DLabels.push(pitcherBadge);
+
+        // 2. Sugar Bowl + Spoon on Table (center-left front: x = -2.2, z = 1.65)
+        const sugarBowlGroup = new THREE.Group();
+        sugarBowlGroup.position.set(-2.2, 0, 1.65);
+        sugarBowlGroup.userData = {
+          dragType: 'sugar',
+          homePos: new THREE.Vector3(-2.2, 0, 1.65)
+        };
+        const bowlMesh = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.56, 0.42, 0.62, 32),
+          new THREE.MeshStandardMaterial({ color: 0x1e3a8a, roughness: 0.3, metalness: 0.2 })
+        );
+        bowlMesh.position.y = 0.31;
+        const bowlRim = new THREE.Mesh(
+          new THREE.TorusGeometry(0.56, 0.03, 12, 32),
+          new THREE.MeshStandardMaterial({ color: 0xfacc15 })
+        );
+        bowlRim.rotation.x = Math.PI / 2;
+        bowlRim.position.y = 0.62;
+        const bowlSugar = new THREE.Mesh(
+          new THREE.SphereGeometry(0.5, 24, 16, 0, Math.PI * 2, 0, Math.PI * 0.5),
+          new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.65 })
+        );
+        bowlSugar.position.y = 0.46;
+        bowlSugar.scale.set(1, 0.55, 1);
+        sugarBowlGroup.add(bowlMesh, bowlRim, bowlSugar);
+        scene.add(sugarBowlGroup);
+        draggables.push(sugarBowlGroup);
+
+        const sugarBadge = makeBadge('Sugar & Spoon', 'ಸಕ್ಕರೆ ಮತ್ತು ಚಮಚ', '#fde047', 1.45);
+        sugarBadge.position.set(-2.2, 1.38, 1.65);
+        all3DLabels.push(sugarBadge);
+
+        // Animated 3D Measuring Spoon
+        const spoonGroup = new THREE.Group();
+        const spoonHomePos = new THREE.Vector3(-1.95, 0.68, 1.65);
+        spoonGroup.position.copy(spoonHomePos);
+        spoonGroup.rotation.set(0.25, 0.3, -0.35);
+        spoonGroup.userData = {
+          dragType: 'spoon',
+          homePos: spoonHomePos.clone(),
+          homeRot: new THREE.Euler(0.25, 0.3, -0.35)
+        };
+
+        const spoonHandle = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.025, 0.032, 0.95, 12),
+          new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.85, roughness: 0.2 })
+        );
+        spoonHandle.position.set(0.45, 0.18, 0);
+        spoonHandle.rotation.z = -1.15;
+
+        const spoonBowl = new THREE.Mesh(
+          new THREE.SphereGeometry(0.16, 18, 12, 0, Math.PI * 2, Math.PI * 0.5, Math.PI * 0.5),
+          new THREE.MeshStandardMaterial({ color: 0xf8fafc, metalness: 0.85, roughness: 0.2, side: THREE.DoubleSide })
+        );
+        spoonBowl.scale.set(1.2, 0.65, 0.9);
+
+        const spoonSugarScoop = new THREE.Mesh(
+          new THREE.SphereGeometry(0.145, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.5),
+          new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.6 })
+        );
+        spoonSugarScoop.scale.set(1.15, 0.65, 0.85);
+        spoonSugarScoop.visible = false;
+
+        spoonGroup.add(spoonHandle, spoonBowl, spoonSugarScoop);
+        scene.add(spoonGroup);
+        draggables.push(spoonGroup);
+
+        // 3. 4 Food Color Dropper Bottles on Table (center-right front: x = -0.3 to 1.65, z = 1.65)
+        const colorBottleGroups = [];
+        CUP_CONFIGS.forEach((cfg, idx) => {
+          const bx = -0.35 + idx * 0.65;
+          const bg = new THREE.Group();
+          bg.position.set(bx, 0, 1.65);
+          bg.userData = {
+            dragType: 'colorBottle',
+            cupId: cfg.id,
+            homePos: new THREE.Vector3(bx, 0, 1.65)
+          };
+
+          const bBody = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.17, 0.18, 0.62, 20),
+            new THREE.MeshStandardMaterial({ color: cfg.colorHex, roughness: 0.25 })
+          );
+          bBody.position.y = 0.31;
+
+          const bNozzle = new THREE.Mesh(
+            new THREE.ConeGeometry(0.09, 0.24, 16),
+            new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3 })
+          );
+          bNozzle.position.y = 0.74;
+
+          bg.add(bBody, bNozzle);
+          scene.add(bg);
+          colorBottleGroups.push(bg);
+          draggables.push(bg);
+        });
+
+        const colorsBadge = makeBadge('Food Colors', 'ಆಹಾರ ಬಣ್ಣಗಳು', '#f472b6', 1.35);
+        colorsBadge.position.set(0.62, 1.38, 1.65);
+        all3DLabels.push(colorsBadge);
+
+        // Tall Rainbow Density Tower Glass on the Right (x = 3.7)
+        const towerGroup = new THREE.Group();
+        towerGroup.position.set(3.7, 0, -0.15);
+
+        const towerWall = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.68, 0.64, 3.25, 36, 1, true),
+          new THREE.MeshPhysicalMaterial({
+            color: 0xe0f2fe,
+            transparent: true,
+            opacity: 0.36,
+            roughness: 0.08,
+            side: THREE.DoubleSide,
+            depthWrite: false
+          })
+        );
+        towerWall.position.y = 1.66;
+        towerWall.renderOrder = 4;
+
+        const towerBase = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.66, 0.66, 0.08, 36),
+          new THREE.MeshStandardMaterial({ color: 0xbae6fd, transparent: true, opacity: 0.85 })
+        );
+        towerBase.position.y = 0.04;
+
+        const towerRim = new THREE.Mesh(
+          new THREE.TorusGeometry(0.68, 0.035, 12, 36),
+          new THREE.MeshBasicMaterial({ color: 0x22e6ff })
+        );
+        towerRim.rotation.x = Math.PI / 2;
+        towerRim.position.y = 3.28;
+
+        towerGroup.add(towerWall, towerBase, towerRim);
+        scene.add(towerGroup);
+
+        const towerBadge = makeBadge('Density Tower', 'ಸಾಂದ್ರತೆಯ ಗೋಪುರ', '#22e6ff');
+        towerBadge.position.set(3.7, 3.75, -0.15);
+        all3DLabels.push(towerBadge);
+
+        // 4 Stacked Liquid Layer Meshes inside Tall Glass
+        const towerLayers = [];
+        for (let i = 0; i < 4; i++) {
+          const layerMat = new THREE.MeshStandardMaterial({
+            color: 0x2563eb,
+            transparent: true,
+            opacity: 0.88,
+            roughness: 0.14
+          });
+          const layerMesh = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.62, 0.61, 0.72, 32),
+            layerMat
+          );
+          layerMesh.position.set(3.7, 0.44 + i * 0.72, -0.15);
+          layerMesh.visible = false;
+          scene.add(layerMesh);
+          towerLayers.push({ mesh: layerMesh, mat: layerMat });
+        }
+
+        /* ===================================================================
+           EXPERIMENT STATE & ANIMATED ACTIONS
+           =================================================================== */
+        const state = {
+          step: 1, // 1: Water, 2: Add Sugar (shows mound), 3: Dissolve Sugar, 4: Add Color, 5: Pour into Tower, 6: Observe
+          pouredOrder: [],
+          isAnimating: false
+        };
+
+        const ui = {
+          stepBadge: document.getElementById('step-badge'),
+          mobStepLbl: document.getElementById('mob-step-lbl'),
+          mobLayersLbl: document.getElementById('mob-layers-lbl'),
+          btnMain: document.getElementById('btn-main-step'),
+          ctaEn: document.getElementById('cta-en'),
+          ctaKn: document.getElementById('cta-kn'),
+          cupPourGrid: document.getElementById('cup-pour-grid'),
+          warnToast: document.getElementById('warn-toast'),
+          actPrev: document.getElementById('btn-act-prev'),
+          actNext: document.getElementById('btn-act-next'),
+          actExit: document.getElementById('btn-act-exit'),
+          actStepMain: document.getElementById('act-step-main'),
+          actStepSub: document.getElementById('act-step-sub')
+        };
+
+        let warnTimeout = null;
+        function showWarning(enMsg, knMsg) {
+          ui.warnToast.innerHTML = `<div>⚠️ ${enMsg}</div><div style="font-size:11px;color:#fecdd3;margin-top:2px;">${knMsg}</div>`;
+          ui.warnToast.classList.remove('hidden');
+          playTone(220, 0.25, 'sawtooth');
+          clearTimeout(warnTimeout);
+          warnTimeout = setTimeout(() => ui.warnToast.classList.add('hidden'), 3400);
+        }
+
+        function updateObservationTable() {
+          const posNames = [
+            { en: 'Bottom Layer (1st)', kn: 'ಅತ್ಯಂತ ತಳಭಾಗದ ಪದರ' },
+            { en: '2nd Layer from Bottom', kn: 'ಕೆಳಗಿನಿಂದ ೨ನೇ ಪದರ' },
+            { en: '3rd Layer from Bottom', kn: 'ಕೆಳಗಿನಿಂದ ೩ನೇ ಪದರ' },
+            { en: 'Top Layer (4th)', kn: 'ಮೇಲ್ಭಾಗದ ಪದರ' }
+          ];
+          [1, 2, 3, 4].forEach((cupId) => {
+            const idx = state.pouredOrder.indexOf(cupId);
+            const cell = document.getElementById(`obs-pos-${cupId}`);
+            if (idx >= 0) {
+              cell.innerHTML = `<span class="en" style="color:#22f59a;font-weight:700;">${posNames[idx].en}</span><span class="kn" style="color:#22f59a;font-weight:700;">${posNames[idx].kn}</span>`;
+            } else {
+              cell.textContent = '—';
+            }
+          });
+        }
+
+        function syncUI() {
+          for (let i = 1; i <= 5; i++) {
+            const card = document.getElementById(`card-step-${i}`);
+            const chk = document.getElementById(`chk-${i}`);
+            const mappedStep = i === 1 ? 1 : i === 2 ? (state.step === 2 || state.step === 3 ? state.step : 0) : i + 1;
+            const isActive = (i === 1 && state.step === 1) || (i === 2 && (state.step === 2 || state.step === 3)) || (i === 3 && state.step === 4) || (i === 4 && state.step === 5) || (i === 5 && state.step === 6);
+            const isDone = (i === 1 && state.step > 1) || (i === 2 && state.step > 3) || (i === 3 && state.step > 4) || (i === 4 && state.step > 5) || (i === 5 && state.step === 6);
+            card.classList.toggle('active', isActive);
+            card.classList.toggle('done', isDone);
+            chk.textContent = isDone ? '✅' : isActive ? '👉' : '⏳';
+          }
+
+          const displayStep = state.step <= 2 ? state.step : state.step - 1;
+          ui.stepBadge.textContent = `Step ${displayStep}/5`;
+          ui.mobStepLbl.textContent = `Step ${displayStep} / 5`;
+          ui.mobLayersLbl.textContent = `Layers: ${state.pouredOrder.length} / 4`;
+
+          ui.actPrev.disabled = state.isAnimating || (state.step === 1 && state.pouredOrder.length === 0);
+          ui.actNext.disabled = state.isAnimating || state.step === 6;
+          ui.actStepMain.textContent = `STEP ${displayStep} / 5`;
+
+          const stepSubTitles = {
+            1: 'Pour 50ml Water',
+            2: 'Add Sugar Spoons',
+            3: 'Stir & Dissolve Sugar',
+            4: 'Add Food Colors',
+            5: `Pour Tower (${state.pouredOrder.length}/4)`,
+            6: 'Rainbow Complete 🌈'
+          };
+          ui.actStepSub.textContent = stepSubTitles[state.step];
+
+          ui.cupPourGrid.classList.toggle('hidden', state.step < 5);
+          ui.btnMain.classList.toggle('hidden', state.step >= 5);
+          ui.btnMain.disabled = state.isAnimating;
+
+          if (state.step === 1) {
+            ui.ctaEn.textContent = '💧 Pour 50 ml Warm Water into 4 Cups';
+            ui.ctaKn.textContent = '💧 4 ಕಪ್‌ಗಳಿಗೆ 50 ml ಬೆಚ್ಚಗಿನ ನೀರು ಹಾಕಿ';
+          } else if (state.step === 2) {
+            ui.ctaEn.textContent = '🥄 Add Sugar Spoons (0, 2, 4, 6 Spoons)';
+            ui.ctaKn.textContent = '🥄 ಚಮಚದಿಂದ ಸಕ್ಕರೆ ಹಾಕಿ (0, 2, 4, 6 ಚಮಚ)';
+          } else if (state.step === 3) {
+            ui.ctaEn.textContent = '🌀 Stir Spoon to Dissolve Sugar Completely';
+            ui.ctaKn.textContent = '🌀 ಸಕ್ಕರೆ ಸಂಪೂರ್ಣ ಕರಗುವಂತೆ ಚಮಚದಿಂದ ಕಲಕಿ';
+          } else if (state.step === 4) {
+            ui.ctaEn.textContent = '🎨 Add Food Colors (Red, Yellow, Green, Blue)';
+            ui.ctaKn.textContent = '🎨 ಆಹಾರ ಬಣ್ಣ ಬೆರೆಸಿ (ಕೆಂಪು, ಹಳದಿ, ಹಸಿರು, ನೀಲಿ)';
+          }
+
+          document.querySelectorAll('.cup-btn').forEach((btn) => {
+            const cid = Number(btn.getAttribute('data-cup'));
+            const isPoured = state.pouredOrder.includes(cid);
+            btn.disabled = state.isAnimating || state.step !== 5 || isPoured;
+            btn.classList.toggle('poured', isPoured);
+          });
+
+          updateObservationTable();
+        }
+
+        function applyStepState(targetStep) {
+          state.step = targetStep;
+          if (targetStep < 5) {
+            state.pouredOrder = [];
+            towerLayers.forEach((l) => { l.mesh.visible = false; });
+          }
+
+          [1, 2, 3, 4].forEach((id) => {
+            const c = cups[id];
+            const isPoured = state.pouredOrder.includes(id);
+            c.liquid.visible = targetStep >= 2 && !isPoured;
+
+            // Show visible sugar pile at bottom of cup on Step 3 (after adding spoons, before dissolving)
+            if (targetStep === 3 && c.cfg.spoons > 0) {
+              c.sugarPile.visible = true;
+              c.sugarPile.scale.set(1, 1, 1);
+            } else {
+              c.sugarPile.visible = false;
+              c.sugarPile.scale.set(1, 0.01, 1);
+            }
+
+            // Update front label on each cup with exact spoon count & color status
+            const spoonsAdded = targetStep >= 3 ? c.cfg.spoons : 0;
+            const isColored = targetStep >= 5;
+            c.frontLabel.userData.updateLabel(spoonsAdded, isColored);
+
+            if (targetStep >= 5) {
+              c.liquidMat.color.setHex(c.cfg.colorHex);
+            } else if (targetStep === 4) {
+              c.liquidMat.color.setHex(0xdbeafe);
+            } else {
+              c.liquidMat.color.setHex(0xb8e6ff);
+            }
+          });
+
+          spoonGroup.position.copy(spoonHomePos);
+          spoonGroup.rotation.set(0.25, 0.3, -0.35);
+          spoonSugarScoop.visible = false;
+
+          syncUI();
+        }
+
+        /* Animated Sugar Spoon Scooping into Cups 1–4 */
+        function animateAddSugar() {
+          if (state.isAnimating) return;
+          state.isAnimating = true;
+          syncUI();
+
+          const cupOrder = [2, 3, 4]; // Cup 1 gets 0 spoons, Cups 2, 3, 4 get 2, 4, 6 spoons
+          let seqIdx = 0;
+
+          function scoopNextCup() {
+            if (seqIdx >= cupOrder.length) {
+              spoonGroup.position.copy(spoonHomePos);
+              spoonGroup.rotation.set(0.25, 0.3, -0.35);
+              spoonSugarScoop.visible = false;
+              state.isAnimating = false;
+              applyStepState(3);
+              return;
+            }
+            const cid = cupOrder[seqIdx];
+            const c = cups[cid];
+            // Move spoon to sugar bowl, scoop sugar, move over cup, dump sugar & show sugar level pile!
+            spoonGroup.position.set(-2.2, 0.85, 1.65);
+            spoonSugarScoop.visible = true;
+            playTone(520, 0.08, 'sine');
+
+            setTimeout(() => {
+              spoonGroup.position.set(c.cfg.x, 1.72, -0.15);
+              spoonGroup.rotation.z = -0.9;
+              spoonSugarScoop.visible = false;
+              c.sugarPile.visible = true;
+              c.sugarPile.scale.set(1, 1, 1);
+              c.frontLabel.userData.updateLabel(c.cfg.spoons, false);
+              playTone(640 + seqIdx * 80, 0.12, 'triangle');
+
+              seqIdx++;
+              setTimeout(scoopNextCup, 320);
+            }, 260);
+          }
+
+          scoopNextCup();
+        }
+
+        /* Animated Stirring Spoon to Dissolve Sugar */
+        function animateDissolveSugar() {
+          if (state.isAnimating) return;
+          state.isAnimating = true;
+          syncUI();
+
+          let stepIdx = 0;
+          const cupOrder = [2, 3, 4];
+
+          function stirNext() {
+            if (stepIdx >= cupOrder.length) {
+              spoonGroup.position.copy(spoonHomePos);
+              spoonGroup.rotation.set(0.25, 0.3, -0.35);
+              state.isAnimating = false;
+              applyStepState(4);
+              return;
+            }
+            const cid = cupOrder[stepIdx];
+            const c = cups[cid];
+            spoonGroup.position.set(c.cfg.x, 1.35, -0.15);
+            spoonGroup.rotation.set(0, 0, -1.4);
+            c.sugarPile.scale.set(1, 0.45, 1);
+            playTone(720, 0.1, 'sine');
+
+            setTimeout(() => {
+              c.sugarPile.visible = false;
+              c.liquidMat.color.setHex(0xdbeafe);
+              stepIdx++;
+              stirNext();
+            }, 280);
+          }
+          stirNext();
+        }
+
+        /* Animated Color Bottles Tilting & Coloring Each Cup */
+        function animateAddColors() {
+          if (state.isAnimating) return;
+          state.isAnimating = true;
+          syncUI();
+
+          let idx = 0;
+          function dropNextColor() {
+            if (idx >= 4) {
+              state.isAnimating = false;
+              applyStepState(5);
+              return;
+            }
+            const cid = idx + 1;
+            const c = cups[cid];
+            const bottle = colorBottleGroups[idx];
+            bottle.position.set(c.cfg.x, 1.85, -0.15);
+            bottle.rotation.z = 2.6;
+            playTone(540 + idx * 90, 0.12, 'triangle');
+
+            setTimeout(() => {
+              c.liquidMat.color.setHex(c.cfg.colorHex);
+              c.frontLabel.userData.updateLabel(c.cfg.spoons, true);
+              bottle.position.copy(bottle.userData.homePos);
+              bottle.rotation.set(0, 0, 0);
+              idx++;
+              dropNextColor();
+            }, 260);
+          }
+          dropNextColor();
+        }
+
+        /* Animated Cup Pouring into Main Rainbow Density Tower */
+        function pourCupIntoTower(cupId) {
+          if (state.isAnimating || state.step !== 5 || state.pouredOrder.includes(cupId)) return;
+
+          const expectedCupId = 4 - state.pouredOrder.length; // Must pour 4 -> 3 -> 2 -> 1
+          if (cupId !== expectedCupId) {
+            const expCfg = cups[expectedCupId].cfg;
+            showWarning(
+              `Pour highest density next! Select Cup ${expectedCupId} (${expCfg.spoons} spoons) so layers don't mix.`,
+              `ಮೊದಲು ಹೆಚ್ಚು ಸಾಂದ್ರತೆಯ ಕಪ್ ${expectedCupId} (${expCfg.spoons} ಚಮಚ ಸಕ್ಕರೆ) ದ್ರಾವಣವನ್ನು ಸುರಿಯಿರಿ!`
+            );
+            return;
+          }
+
+          state.isAnimating = true;
+          syncUI();
+
+          const cup = cups[cupId];
+          cup.group.position.set(2.75, 2.55, -0.15);
+          cup.group.rotation.z = -1.15;
+          playTone(440 + state.pouredOrder.length * 110, 0.16, 'triangle');
+
+          setTimeout(() => {
+            cup.liquid.visible = false;
+            cup.group.position.set(cup.cfg.x, 0, -0.15);
+            cup.group.rotation.set(0, 0, 0);
+
+            const layerIdx = state.pouredOrder.length;
+            towerLayers[layerIdx].mat.color.setHex(cup.cfg.colorHex);
+            towerLayers[layerIdx].mesh.visible = true;
+            state.pouredOrder.push(cupId);
+
+            state.isAnimating = false;
+            if (state.pouredOrder.length === 4) {
+              state.step = 6;
+              playTone(784, 0.25, 'sine');
+            }
+            syncUI();
+          }, 360);
+        }
+
+        function nextAction() {
+          if (state.isAnimating) return;
+          if (state.step === 1) {
+            playTone(520, 0.14);
+            applyStepState(2);
+          } else if (state.step === 2) {
+            animateAddSugar();
+          } else if (state.step === 3) {
+            animateDissolveSugar();
+          } else if (state.step === 4) {
+            animateAddColors();
+          } else if (state.step === 5) {
+            const nextCup = 4 - state.pouredOrder.length;
+            if (nextCup >= 1) pourCupIntoTower(nextCup);
+          }
+        }
+
+        function prevAction() {
+          if (state.isAnimating) return;
+          if (state.step === 6 || (state.step === 5 && state.pouredOrder.length > 0)) {
+            const lastCupId = state.pouredOrder.pop();
+            const layerIdx = state.pouredOrder.length;
+            towerLayers[layerIdx].mesh.visible = false;
+            cups[lastCupId].liquid.visible = true;
+            state.step = 5;
+            syncUI();
+          } else if (state.step > 1) {
+            applyStepState(state.step - 1);
+          }
+        }
+
+        function resetLab() {
+          state.isAnimating = false;
+          state.pouredOrder = [];
+          towerLayers.forEach((l) => { l.mesh.visible = false; });
+          applyStepState(1);
+        }
+
+        /* Wire Buttons & 3D Cup Taps */
+        ui.btnMain.addEventListener('click', nextAction);
+        ui.actNext.addEventListener('click', nextAction);
+        ui.actPrev.addEventListener('click', prevAction);
+        ui.actExit.addEventListener('click', () => {
+          document.body.classList.remove('ui-hidden');
+          resetLab();
+        });
+
+        document.querySelectorAll('.cup-btn').forEach((btn) => {
+          btn.addEventListener('click', () => pourCupIntoTower(Number(btn.getAttribute('data-cup'))));
+        });
+
+        /* ===================================================================
+           3D DRAG-AND-DROP WITH AUTOMATIC SNAP-TO-ACTION + CLICK SUPPORT
+           =================================================================== */
+        const raycaster = new THREE.Raycaster();
+        const ptr = new THREE.Vector2();
+        const dragPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -1.15);
+        const dragHit = new THREE.Vector3();
+        let activeDrag = null;
+        let downXY = { x: 0, y: 0 };
+
+        function updatePtr(e) {
+          const rect = renderer.domElement.getBoundingClientRect();
+          ptr.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+          ptr.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+        }
+
+        function findDraggableOwner(obj) {
+          let cur = obj;
+          while (cur) {
+            if (draggables.includes(cur)) return cur;
+            cur = cur.parent;
+          }
+          return null;
+        }
+
+        function isDraggableForCurrentStep(owner) {
+          if (state.isAnimating) return false;
+          const t = owner.userData.dragType;
+          if (state.step === 1 && t === 'pitcher') return true;
+          if (state.step === 2 && (t === 'spoon' || t === 'sugar')) return true;
+          if (state.step === 3 && (t === 'spoon' || t === 'sugar')) return true;
+          if (state.step === 4 && t === 'colorBottle') return true;
+          if (state.step === 5 && t === 'cup' && !state.pouredOrder.includes(owner.userData.cupId)) return true;
+          return false;
+        }
+
+        function snapHome(owner) {
+          if (!owner) return;
+          if (owner.userData.dragType === 'sugar') {
+            spoonGroup.position.copy(spoonHomePos);
+            spoonGroup.rotation.copy(spoonGroup.userData.homeRot);
+            spoonSugarScoop.visible = false;
+            return;
+          }
+          owner.position.copy(owner.userData.homePos);
+          if (owner.userData.homeRot) {
+            owner.rotation.copy(owner.userData.homeRot);
+          } else {
+            owner.rotation.set(0, 0, 0);
+          }
+          if (owner.userData.dragType === 'spoon') {
+            spoonSugarScoop.visible = false;
+          }
+        }
+
+        renderer.domElement.addEventListener('pointerdown', (e) => {
+          downXY = { x: e.clientX, y: e.clientY };
+          if (state.isAnimating) return;
+          updatePtr(e);
+          raycaster.setFromCamera(ptr, camera);
+
+          const hits = raycaster.intersectObjects(draggables, true);
+          if (hits.length > 0) {
+            const owner = findDraggableOwner(hits[0].object);
+            if (owner && isDraggableForCurrentStep(owner)) {
+              activeDrag = owner.userData.dragType === 'sugar' ? spoonGroup : owner;
+              controls.enabled = false;
+              canvas.style.cursor = 'grabbing';
+              if (activeDrag.userData.dragType === 'spoon' && state.step === 2) {
+                spoonSugarScoop.visible = true;
+              }
+              playTone(480, 0.08, 'sine');
+            }
+          }
+        });
+
+        renderer.domElement.addEventListener('pointermove', (e) => {
+          if (!activeDrag) return;
+          updatePtr(e);
+          raycaster.setFromCamera(ptr, camera);
+          if (!raycaster.ray.intersectPlane(dragPlane, dragHit)) return;
+
+          const clampedX = THREE.MathUtils.clamp(dragHit.x, -4.8, 4.4);
+          const clampedZ = THREE.MathUtils.clamp(dragHit.z, -1.5, 2.2);
+          activeDrag.position.set(clampedX, 1.35, clampedZ);
+
+          const t = activeDrag.userData.dragType;
+
+          // Auto-trigger immediately once dragged near target zone!
+          if (t === 'pitcher' && state.step === 1 && clampedZ < 0.75) {
+            const item = activeDrag;
+            activeDrag = null;
+            controls.enabled = true;
+            canvas.style.cursor = 'grab';
+            snapHome(item);
+            nextAction();
+          } else if (t === 'spoon' && (state.step === 2 || state.step === 3) && clampedZ < 0.75) {
+            const item = activeDrag;
+            activeDrag = null;
+            controls.enabled = true;
+            canvas.style.cursor = 'grab';
+            snapHome(item);
+            nextAction();
+          } else if (t === 'colorBottle' && state.step === 4 && clampedZ < 0.75) {
+            const item = activeDrag;
+            activeDrag = null;
+            controls.enabled = true;
+            canvas.style.cursor = 'grab';
+            snapHome(item);
+            nextAction();
+          } else if (t === 'cup' && state.step === 5 && clampedX > 2.15) {
+            const cupId = activeDrag.userData.cupId;
+            const item = activeDrag;
+            activeDrag = null;
+            controls.enabled = true;
+            canvas.style.cursor = 'grab';
+            snapHome(item);
+            pourCupIntoTower(cupId);
+          }
+        });
+
+        renderer.domElement.addEventListener('pointerup', (e) => {
+          const moveDist = Math.hypot(e.clientX - downXY.x, e.clientY - downXY.y);
+
+          if (activeDrag) {
+            const item = activeDrag;
+            activeDrag = null;
+            controls.enabled = true;
+            canvas.style.cursor = 'grab';
+            const t = item.userData.dragType;
+            const droppedNearCups = item.position.z < 1.05;
+            const droppedNearTower = item.position.x > 1.7;
+            snapHome(item);
+
+            // Also trigger automatically if tapped (< 10px move) or released near target!
+            if (moveDist < 10 || (t === 'cup' ? droppedNearTower : droppedNearCups)) {
+              if (t === 'cup') pourCupIntoTower(item.userData.cupId);
+              else nextAction();
+            }
+            return;
+          }
+
+          if (moveDist > 8) return;
+          updatePtr(e);
+          raycaster.setFromCamera(ptr, camera);
+          const hits = raycaster.intersectObjects(clickableMeshes, false);
+          if (hits.length > 0 && hits[0].object.userData.cupId && state.step === 5) {
+            pourCupIntoTower(hits[0].object.userData.cupId);
+          }
+        });
+
+        /* Labels Show / Hide Toggle Button */
+        const btnLabelsToggle = document.getElementById('btn-labels-toggle');
+        const labelsToggleLabel = document.getElementById('labels-toggle-label');
+        btnLabelsToggle.addEventListener('click', () => {
+          labelsVisible = !labelsVisible;
+          all3DLabels.forEach((lbl) => { lbl.visible = labelsVisible; });
+          btnLabelsToggle.classList.toggle('active', labelsVisible);
+          labelsToggleLabel.textContent = labelsVisible ? 'Labels ON' : 'Labels OFF';
+          playTone(labelsVisible ? 640 : 420, 0.08, 'sine');
+        });
+
+        /* Language Switch (Both / English / Kannada) */
+        const langOrder = ['bi', 'en', 'kn'];
+        const langNames = { bi: 'EN + ಕನ್ನಡ', en: 'English', kn: 'ಕನ್ನಡ' };
+        let langIdx = 0;
+        document.getElementById('btn-lang').addEventListener('click', () => {
+          langIdx = (langIdx + 1) % langOrder.length;
+          const mode = langOrder[langIdx];
+          document.body.classList.remove('lang-bi', 'lang-en', 'lang-kn');
+          document.body.classList.add('lang-' + mode);
+          document.getElementById('lang-label').textContent = langNames[mode];
+        });
+
+        /* Desktop / Mobile Mode Switch */
+        let isMobileMode = window.innerWidth <= 900;
+        const btnLayoutMode = document.getElementById('btn-layout-mode');
+        const layoutIcon = document.getElementById('layout-mode-icon');
+        const layoutLabel = document.getElementById('layout-mode-label');
+
+        function applyLayoutMode(mobile) {
+          isMobileMode = mobile;
+          document.body.classList.toggle('mode-mobile', mobile);
+          document.body.classList.toggle('mode-desktop', !mobile);
+          layoutIcon.textContent = mobile ? '📱' : '🖥️';
+          layoutLabel.textContent = mobile ? 'Mobile' : 'Desktop';
+          const camCfg = mobile ? CAM_MOBILE : CAM_DESKTOP;
+          camera.position.copy(camCfg.pos);
+          controls.target.copy(camCfg.target);
+          controls.update();
+        }
+        applyLayoutMode(isMobileMode);
+        btnLayoutMode.addEventListener('click', () => applyLayoutMode(!isMobileMode));
+
+        /* Mobile Bottom Tabs */
+        const mobTabs = Array.from(document.querySelectorAll('.mob-tab-btn'));
+        mobTabs.forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const tab = btn.getAttribute('data-mob-tab');
+            document.body.setAttribute('data-mobile-tab', tab);
+            mobTabs.forEach((b) => b.classList.remove('active'));
+            btn.classList.add('active');
+          });
+        });
+
+        /* Hide / Show All UI */
+        document.getElementById('btn-hide-ui').addEventListener('click', () => document.body.classList.add('ui-hidden'));
+        document.getElementById('btn-show-ui').addEventListener('click', () => document.body.classList.remove('ui-hidden'));
+
+        /* Sound Toggle */
+        document.getElementById('btn-sound').addEventListener('click', (e) => {
+          soundOn = !soundOn;
+          e.currentTarget.textContent = soundOn ? '🔊' : '🔇';
+        });
+
+        /* Quiz Modal Logic */
+        const quizModal = document.getElementById('quiz-modal');
+        let qIdx = 0;
+        let qAnswers = new Array(QUESTIONS.length).fill(null);
+
+        function renderQuiz() {
+          const q = QUESTIONS[qIdx];
+          const chosen = qAnswers[qIdx];
+          const score = qAnswers.reduce((s, a, i) => s + (a === QUESTIONS[i].correct ? 1 : 0), 0);
+
+          document.getElementById('q-progress').textContent = `Question ${qIdx + 1} / ${QUESTIONS.length}`;
+          document.getElementById('q-score').textContent = `Score: ${score}`;
+          document.getElementById('q-text-en').textContent = q.en;
+          document.getElementById('q-text-kn').textContent = q.kn;
+
+          document.getElementById('btn-q-prev').disabled = qIdx === 0;
+          const nextBtn = document.getElementById('btn-q-next');
+          nextBtn.classList.toggle('hidden', chosen === null || qIdx >= QUESTIONS.length - 1);
+
+          const optsEl = document.getElementById('q-options');
+          optsEl.innerHTML = '';
+          q.options.forEach((opt, idx) => {
+            const btn = document.createElement('button');
+            btn.className = 'quiz-opt';
+            btn.innerHTML = `<span class="en">${String.fromCharCode(65 + idx)}. ${opt.en}</span><span class="kn" style="color:var(--text-kn);font-size:12px;">${opt.kn}</span>`;
+            if (chosen !== null) {
+              btn.disabled = true;
+              if (idx === q.correct) btn.classList.add('correct');
+              else if (idx === chosen) btn.classList.add('wrong');
+            }
+            btn.addEventListener('click', () => {
+              if (qAnswers[qIdx] !== null) return;
+              qAnswers[qIdx] = idx;
+              playTone(idx === q.correct ? 660 : 260, 0.16);
+              renderQuiz();
+            });
+            optsEl.appendChild(btn);
+          });
+
+          const fbEl = document.getElementById('q-feedback');
+          if (chosen !== null) {
+            const ok = chosen === q.correct;
+            fbEl.classList.remove('hidden');
+            fbEl.innerHTML = `<strong style="color:${ok ? '#22f59a' : '#ff6b81'};">${ok ? '✓ Correct! / ಸರಿ ಉತ್ತರ!' : '✕ Not Quite / ತಪ್ಪು ಉತ್ತರ'}</strong><div class="en" style="margin-top:4px;">${q.expEn}</div><div class="kn" style="color:var(--text-kn);margin-top:4px;">${q.expKn}</div>`;
+          } else {
+            fbEl.classList.add('hidden');
+          }
+        }
+
+        document.getElementById('btn-open-quiz').addEventListener('click', () => {
+          qIdx = 0;
+          qAnswers = new Array(QUESTIONS.length).fill(null);
+          quizModal.classList.remove('hidden');
+          renderQuiz();
+        });
+        document.getElementById('btn-quiz-close').addEventListener('click', () => quizModal.classList.add('hidden'));
+        document.getElementById('btn-q-exit').addEventListener('click', () => quizModal.classList.add('hidden'));
+        document.getElementById('btn-q-prev').addEventListener('click', () => {
+          if (qIdx > 0) { qIdx--; renderQuiz(); }
+        });
+        document.getElementById('btn-q-next').addEventListener('click', () => {
+          if (qIdx < QUESTIONS.length - 1) { qIdx++; renderQuiz(); }
+        });
+
+        window.addEventListener('resize', () => {
+          camera.aspect = window.innerWidth / window.innerHeight;
+          camera.updateProjectionMatrix();
+          renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        applyStepState(1);
+
+        function animate() {
+          requestAnimationFrame(animate);
+          controls.update();
+          renderer.render(scene, camera);
+        }
+        animate();
+      }
+
+      window.addEventListener('load', async () => {
+        const ok = await ensureThree();
+        if (ok) initLab();
+      });
+    })();
+  </script>
+</body>
+</html>
